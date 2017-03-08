@@ -59,10 +59,10 @@ describe("basics", () => {
   testRender(<Custom prop={Bacon.constant("not-lifted")} ref="test"/>,
              '<div>Bacon.constant(not-lifted) {}</div>')
 
-  testRender(<Custom karet-lift prop={Bacon.constant("lifted")} ref="test"/>,
+  testRender(<Custom baret-lift prop={Bacon.constant("lifted")} ref="test"/>,
              '<div>lifted {}</div>')
 
-  testRender(<Custom karet-lift prop={"lifted anyway"} ref="test"/>,
+  testRender(<Custom baret-lift prop={"lifted anyway"} ref="test"/>,
              '<div>lifted anyway {}</div>')
 
   const Spread = props => <div {...props} />

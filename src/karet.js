@@ -14,7 +14,7 @@ import {
 
 const STYLE = "style"
 const CHILDREN = "children"
-const KARET_LIFT = "karet-lift"
+const BARET = "baret-lift"
 const DD_REF = "$$ref"
 
 //
@@ -328,14 +328,14 @@ function filterProps(type, props) {
     const val = props[key]
     if ("ref" === key)
       newProps[DD_REF] = val
-    else if (KARET_LIFT !== key)
+    else if (BARET !== key)
       newProps[key] = val
   }
   return newProps
 }
 
 function hasLift(props) {
-  return props && props[KARET_LIFT] === true
+  return props && props[BARET] === true
 }
 
 function createElement(...args) {
@@ -346,7 +346,7 @@ function createElement(...args) {
       args[1] = filterProps(type, props)
       args[0] = FromClass
     } else if (hasLift(props)) {
-      args[1] = dissocPartialU(KARET_LIFT, props) || object0
+      args[1] = dissocPartialU(BARET, props) || object0
     }
   }
   return reactElement(...args)
