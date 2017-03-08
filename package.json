@@ -1,7 +1,7 @@
 {
   "name": "karet",
   "version": "1.0.0",
-  "description": "Karet is a library that allows you to embed Kefir observables into React VDOM",
+  "description": "Karet is a library that allows you to embed Bacon.js observables into React VDOM",
   "main": "lib/karet.js",
   "scripts": {
     "dist": "babel src --source-maps inline --out-dir lib",
@@ -16,7 +16,7 @@
   },
   "keywords": [
     "jsx",
-    "kefir",
+    "baconjs",
     "observables",
     "react",
     "reactive",
@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "infestines": "^0.4.1",
-    "kefir": "^3.2.1",
+    "baconjs": "^0.7",
     "react": "^15.0.1"
   }
 }

@@ -1,5 +1,5 @@
 import React from "react"
-import {Observable} from "kefir"
+import {Observable} from "baconjs"
 import {
   array0,
   assocPartialU,
@@ -12,9 +12,6 @@ import {
 
 //
 
-const VALUE = "value"
-const ERROR = "error"
-const END = "end"
 const STYLE = "style"
 const CHILDREN = "children"
 const KARET_LIFT = "karet-lift"
@@ -48,34 +45,30 @@ inherit(LiftedComponent, Component, {
 
 //
 
-function FromKefir(props) {
+function FromBacon(props) {
   LiftedComponent.call(this, props)
   this.callback = null
   this.rendered = null
 }
 
-inherit(FromKefir, LiftedComponent, {
+inherit(FromBacon, LiftedComponent, {
   doUnsubscribe() {
-    const callback = this.callback
-    if (callback)
-      this.props.observable.offAny(callback)
+    if (this.unsub)
+      this.unsub()
   },
   doSubscribe({observable}) {
     if (isObs(observable)) {
       const callback = e => {
-        switch (e.type) {
-          case VALUE:
-            this.rendered = e.value || null
-            this.forceUpdate()
-            break
-          case ERROR:
-            throw e.value
-          case END:
-            this.callback = null
+        if (e.hasValue()) {
+          this.rendered = e.value() || null
+          this.forceUpdate()
+        } else if (e.isError()) {
+          throw e.error
+        } else if (e.isEnd()) {
+          this.unsub = null
         }
       }
-      this.callback = callback
-      observable.onAny(callback)
+      this.unsub = observable.subscribe(callback)
     } else {
       this.rendered = observable || null
     }
@@ -85,7 +78,7 @@ inherit(FromKefir, LiftedComponent, {
   }
 })
 
-export const fromKefir = observable => reactElement(FromKefir, {observable})
+export const fromBacon = observable => reactElement(FromBacon, {observable})
 
 //
 
@@ -186,17 +179,19 @@ function render(props, values) {
 //
 
 function incValues(self) { self.values += 1 }
-function offAny1(handlers, obs) { obs.offAny(handlers) }
-function offAny(handlers, obs) {
-  const handler = handlers.pop()
-  if (handler)
-    obs.offAny(handler)
+function onAny1(handler, obs) { 
+  handler.unsub = obs.subscribe(handler) 
 }
-function onAny1(handlers, obs) { obs.onAny(handlers) }
 function onAny(self, obs) {
   const handler = e => self.doHandleN(handler, e)
   self.handlers.push(handler)
-  obs.onAny(handler)
+  handler.unsub = obs.subscribe(handler)
+}
+
+function unsub(handler) {
+  if (handler) {
+    handler.unsub()
+  }
 }
 
 function FromClass(props) {
@@ -209,15 +204,15 @@ inherit(FromClass, LiftedComponent, {
   doUnsubscribe() {
     const handlers = this.handlers
     if (handlers instanceof Function) {
-      forEach(this.props, handlers, offAny1)
+      handlers.unsub()
     } else if (handlers) {
-      forEach(this.props, handlers.reverse(), offAny)
+      handlers.forEach(unsub)
     }
   },
   doSubscribe(props) {
     this.values = 0
     forEach(props, this, incValues)
-    const n = this.values
+    const n = this.values // Here this.values contains the number of observable values. Later on, it'll contain the actual values.
 
     switch (n) {
       case 0:
@@ -237,20 +232,17 @@ inherit(FromClass, LiftedComponent, {
     }
   },
   doHandle1(e) {
-    switch (e.type) {
-      case VALUE: {
-        const value = e.value
-        if (this.values !== value) {
-          this.values = value
-          this.forceUpdate()
-        }
-        break
+    if (e.hasValue()) {
+      const value = e.value()
+      if (this.values !== value) {
+        this.values = value
+        this.forceUpdate()
       }
-      case ERROR: throw e.value
-      default: {
-        this.values = [this.values]
-        this.handlers = null
-      }
+    } else if (e.isError()) {
+      throw e.error
+    } else { // Assume this is End
+      this.values = [this.values]
+      this.handlers = null
     }
   },
   doHandleN(handler, e) {
@@ -258,27 +250,25 @@ inherit(FromClass, LiftedComponent, {
     let idx=0
     while (handlers[idx] !== handler)
       ++idx
-    switch (e.type) {
-      case VALUE: {
-        const value = e.value
-        const values = this.values
-        if (values[idx] !== value) {
-          values[idx] = value
-          this.forceUpdate()
-        }
-        break
+    // Found the index of this handler/value
+    if (e.hasValue()) {
+      const value = e.value()
+      const values = this.values
+      if (values[idx] !== value) {
+        values[idx] = value
+        this.forceUpdate()
       }
-      case ERROR: throw e.value
-      default: {
-        handlers[idx] = null
-        const n = handlers.length
-        if (n !== this.values.length)
+    } else if (e.isError()) {
+      throw e.error
+    } else { // This is End
+      handlers[idx] = null
+      const n = handlers.length
+      if (n !== this.values.length)
+        return
+      for (let i=0; i < n; ++i)
+        if (handlers[i])
           return
-        for (let i=0; i < n; ++i)
-          if (handlers[i])
-            return
-        this.handlers = null
-      }
+      this.handlers = null // No handlers left -> nullify
     }
   },
   render() {

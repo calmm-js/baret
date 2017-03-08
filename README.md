@@ -1,9 +1,9 @@
 [ [≡](#contents) | [Tutorial](#tutorial) | [Reference](#reference) ]
 
-# Karet
+# Baret
 
-Karet is a library that allows you to
-embed [Kefir](http://rpominov.github.io/kefir/) observables
+Baret is a library that allows you to
+embed [Bacon.js](https://baconjs.github.io/) observables
 into [React](https://facebook.github.io/react/) Virtual DOM.  Embedding
 observables into VDOM has the following benefits:
 * It allows you to use
@@ -22,7 +22,7 @@ observables into VDOM has the following benefits:
     are pushed through observables.  An update to a deeply nested VDOM element
     can be an O(1) operation.
 
-Using Karet couldn't be simpler.  You just `import React from "karet"` and you
+Using Baret couldn't be simpler.  You just `import React from "karet"` and you
 are good to go.
 
 [![npm version](https://badge.fury.io/js/karet.svg)](http://badge.fury.io/js/karet)
@@ -37,13 +37,13 @@ are good to go.
 * [Tutorial](#tutorial)
 * [Reference](#reference)
   * [`karet-lift` attribute](#karet-lift)
-  * [`fromKefir(observableVDOM)`](#fromKefir "fromKefir: Observable VDOM -> VDOM")
+  * [`fromBacon(observableVDOM)`](#fromBacon "fromBacon: Observable VDOM -> VDOM")
   * [`fromClass(Component)`](#fromClass "fromClass: Component props -> Component (Observable props)")
     * [`$$ref` attribute](#ref)
 
 ## Tutorial
 
-To use Karet, you simply import it as `React`:
+To use Baret, you simply import it as `React`:
 
 ```jsx
 import React from "karet"
@@ -52,7 +52,7 @@ import React from "karet"
 and you can then write React components:
 
 ```jsx
-const oncePerSecond = Kefir.interval(1000).toProperty(() => {})
+const oncePerSecond = Bacon.interval(1000).toProperty()
 
 const Clock = () =>
   <div>
@@ -60,7 +60,7 @@ const Clock = () =>
   </div>
 ```
 
-with VDOM that can have embedded [Kefir](http://rpominov.github.io/kefir/)
+with VDOM that can have embedded [Bacon.js](https://baconjs.github.io/)
 observables.
 
 **NOTE:** The result, like the `Clock` above, is *just* a React component.  If
@@ -71,8 +71,8 @@ modules that do not import `karet`.
 
 ### <a name="karet-lift"></a> [≡](#contents) [`karet-lift` attribute](#karet-lift)
 
-Karet only lifts built-in HTML elements implicitly.  The `karet-lift` attribute
-on a non-primitive element instructs Karet to lift the element.
+Baret only lifts built-in HTML elements implicitly.  The `karet-lift` attribute
+on a non-primitive element instructs Baret to lift the element.
 
 For example, you could write:
 
@@ -84,38 +84,38 @@ const Link1 = ({...props}) => <RR.Link karet-lift {...props}/>
 ```
 
 to be able to use `Link1` with
-embedded [Kefir](http://rpominov.github.io/kefir/) observables:
+embedded [Bacon.js](https://baconjs.github.io/) observables:
 
 ```jsx
 <Link1 href="https://www.youtube.com/watch?v=Rbm6GXllBiw"
        ref={elem => elem && elem.focus()}>
-  {Kefir.sequentially(1000, [3, 2, 1, "Boom!"])}
+  {Bacon.sequentially(1000, [3, 2, 1, "Boom!"])}
 </Link1>
 ```
 
 Note that the `ref` attribute is only there as an example to contrast
 with [`$$ref`](#ref).
 
-### <a name="fromKefir"></a> [≡](#contents) [`fromKefir(observableVDOM)`](#fromKefir "fromKefir: Observable VDOM -> VDOM")
+### <a name="fromBacon"></a> [≡](#contents) [`fromBacon(observableVDOM)`](#fromBacon "fromBacon: Observable VDOM -> VDOM")
 
-`fromKefir` allows one to convert a Kefir observable of React elements into a
+`fromBacon` allows one to convert a Bacon observable of React elements into a
 React element.  It is useful in case the top-most element of a component depends
-on a Kefir observable.
+on a Bacon observable.
 
 For example:
 
 ```jsx
-import {fromKefir} from "karet"
+import {fromBacon} from "karet"
 import {ifte} from "karet.util"
 
 const Chosen = ({choice}) =>
-  fromKefir(ifte(choice, <True/>, <False/>))
+  fromBacon(ifte(choice, <True/>, <False/>))
 ```
 
 Here `ifte` from `karet-util` returns an observable that is `<True/>` when
 `choice` is true and otherwise `<False/>`.
 
-Note that the point of using `fromKefir` in the above example is that we don't
+Note that the point of using `fromBacon` in the above example is that we don't
 want to wrap the `ifte(...)` inside an additional element like this:
 
 ```jsx
@@ -149,7 +149,7 @@ The `$$ref` attribute on an element whose component is lifted using `fromClass`
 ```jsx
 <Link2 href="https://www.youtube.com/watch?v=Rbm6GXllBiw"
        $$ref={elem => elem && elem.focus()}>
-  {Kefir.sequentially(1000, [3, 2, 1, "Boom!"])}
+  {Bacon.sequentially(1000, [3, 2, 1, "Boom!"])}
 </Link2>
 ```
 
