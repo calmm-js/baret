@@ -1,8 +1,8 @@
 {
-  "name": "karet",
+  "name": "baret",
   "version": "1.0.0",
-  "description": "Karet is a library that allows you to embed Bacon.js observables into React VDOM",
-  "main": "lib/karet.js",
+  "description": "Baret is a library that allows you to embed Bacon.js observables into React VDOM",
+  "main": "lib/baret.js",
   "scripts": {
     "dist": "babel src --source-maps inline --out-dir lib",
     "lint": "eslint src test",
