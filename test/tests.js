@@ -1,6 +1,6 @@
 import * as Bacon from "baconjs"
 
-import React, {fromClass, fromBacon} from "../src/karet"
+import React, {fromClass, fromBacon} from "../src/baret"
 import ReactDOM from "react-dom/server"
 
 function show(x) {
