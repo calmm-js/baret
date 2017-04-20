@@ -1,6 +1,6 @@
 import * as Bacon from "baconjs"
 
-import React, {fromClass, fromBacon} from "../src/baret"
+import React, {fromClass, fromBacon} from "../dist/baret.cjs"
 import ReactDOM from "react-dom/server"
 import PropTypes from "prop-types"
 
