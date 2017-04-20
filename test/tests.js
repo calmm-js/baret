@@ -2,6 +2,7 @@ import * as Bacon from "baconjs"
 
 import React, {fromClass, fromBacon} from "../src/baret"
 import ReactDOM from "react-dom/server"
+import PropTypes from "prop-types"
 
 function show(x) {
   switch (typeof x) {
@@ -102,10 +103,10 @@ describe("context", () => {
       return <div>{this.props.children}</div>
     }
   }
-  Context.childContextTypes = {message: React.PropTypes.any}
+  Context.childContextTypes = {message: PropTypes.any}
 
   const Bottom = (_, context) => <div>{Bacon.constant("Bottom")} {context.message}</div>
-  Bottom.contextTypes = {message: React.PropTypes.any}
+  Bottom.contextTypes = {message: PropTypes.any}
 
   const Middle = () => <div>{Bacon.constant("Middle")} <Bottom/></div>
   const Top = () => <div>{Bacon.constant("Top")} <Middle/></div>
