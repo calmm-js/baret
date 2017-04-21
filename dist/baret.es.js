@@ -351,9 +351,11 @@ function createElement() {
 }
 
 var baret = process.env.NODE_ENV === "production" ? assocPartialU("createElement", createElement, React) : Object.defineProperty(assocPartialU("createElement", createElement, dissocPartialU("PropTypes", React)), "PropTypes", {
-  get: function get() {
-    return React.PropTypes;
-  }
+  get: function (React$$1) {
+    return function () {
+      return React$$1.PropTypes;
+    };
+  }(React)
 });
 
 //
