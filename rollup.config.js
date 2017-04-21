@@ -22,7 +22,6 @@ export default {
       namedExports: {
         "node_modules/react/react.js": [
           "Component",
-          "PropTypes",
           "createElement"
         ]
       }
