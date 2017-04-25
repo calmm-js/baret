@@ -6,7 +6,7 @@ import { array0, assocPartialU, dissocPartialU, inherit, isArray, isString, obje
 
 var STYLE = "style";
 var CHILDREN = "children";
-var BARET = "baret-lift";
+var LIFT = "baret-lift";
 var DD_REF = "$$ref";
 
 //
@@ -20,33 +20,26 @@ var isObs = function isObs(x) {
 
 //
 
-function LiftedComponent(props) {
+var LiftedComponent = /*#__PURE__*/inherit(function LiftedComponent(props) {
   Component.call(this, props);
-}
-
-inherit(LiftedComponent, Component, {
+}, Component, {
   componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
-    this.doUnsubscribe();
+    this.componentWillUnmount();
     this.doSubscribe(nextProps);
   },
   componentWillMount: function componentWillMount() {
     this.doSubscribe(this.props);
-  },
-  componentWillUnmount: function componentWillUnmount() {
-    this.doUnsubscribe();
   }
 });
 
 //
 
-function FromBacon(props) {
+var FromBacon = /*#__PURE__*/inherit(function FromBacon(props) {
   LiftedComponent.call(this, props);
   this.callback = null;
   this.rendered = null;
-}
-
-inherit(FromBacon, LiftedComponent, {
-  doUnsubscribe: function doUnsubscribe() {
+}, LiftedComponent, {
+  componentWillUnmount: function componentWillUnmount() {
     if (this.unsub) this.unsub();
   },
   doSubscribe: function doSubscribe(_ref) {
@@ -81,25 +74,48 @@ var fromBacon = function fromBacon(observable) {
 
 //
 
-function forEach(props, extra, fn) {
-  for (var key in props) {
-    var val = props[key];
-    if (isObs(val)) {
-      fn(extra, val);
-    } else if (CHILDREN === key) {
-      if (isArray(val)) {
-        for (var i = 0, n = val.length; i < n; ++i) {
-          var valI = val[i];
-          if (isObs(valI)) fn(extra, valI);
-        }
+function renderChildren(children, at, values) {
+  if (isObs(children)) {
+    return values[++at[0]];
+  } else if (isArray(children)) {
+    var newChildren = children;
+    for (var i = 0, n = children.length; i < n; ++i) {
+      var childI = children[i];
+      var newChildI = childI;
+      if (isObs(childI)) {
+        newChildI = values[++at[0]];
+      } else if (isArray(childI)) {
+        newChildI = renderChildren(childI, at, values);
       }
-    } else if (STYLE === key) {
-      for (var k in val) {
-        var valK = val[k];
-        if (isObs(valK)) fn(extra, valK);
+      if (newChildI !== childI) {
+        if (newChildren === children) newChildren = children.slice(0);
+        newChildren[i] = newChildI;
       }
     }
+    return newChildren;
+  } else {
+    return children;
   }
+}
+
+function renderStyle(style, at, values) {
+  var newStyle = undefined;
+  for (var i in style) {
+    var styleI = style[i];
+    if (isObs(styleI)) {
+      if (!newStyle) {
+        newStyle = {};
+        for (var j in style) {
+          if (j === i) break;
+          newStyle[j] = style[j];
+        }
+      }
+      newStyle[i] = values[++at[0]];
+    } else if (newStyle) {
+      newStyle[i] = styleI;
+    }
+  }
+  return newStyle || style;
 }
 
 function _render(props, values) {
@@ -107,57 +123,23 @@ function _render(props, values) {
   var newProps = null;
   var newChildren = null;
 
-  var k = -1;
+  var at = [-1];
 
   for (var key in props) {
     var val = props[key];
     if (CHILDREN === key) {
-      if (isObs(val)) {
-        newChildren = values[++k];
-      } else if (isArray(val)) {
-        for (var i = 0, n = val.length; i < n; ++i) {
-          var valI = val[i];
-          if (isObs(valI)) {
-            if (!newChildren) {
-              newChildren = Array(n);
-              for (var j = 0; j < i; ++j) {
-                newChildren[j] = val[j];
-              }
-            }
-            newChildren[i] = values[++k];
-          } else if (newChildren) newChildren[i] = valI;
-        }
-        if (!newChildren) newChildren = val;
-      } else {
-        newChildren = val;
-      }
+      newChildren = renderChildren(val, at, values);
     } else if ("$$type" === key) {
       type = props[key];
     } else if (DD_REF === key) {
       newProps = newProps || {};
-      newProps.ref = isObs(val) ? values[++k] : val;
+      newProps.ref = isObs(val) ? values[++at[0]] : val;
     } else if (isObs(val)) {
       newProps = newProps || {};
-      newProps[key] = values[++k];
+      newProps[key] = values[++at[0]];
     } else if (STYLE === key) {
-      var newStyle = void 0;
-      for (var _i in val) {
-        var _valI = val[_i];
-        if (isObs(_valI)) {
-          if (!newStyle) {
-            newStyle = {};
-            for (var _j in val) {
-              if (_j === _i) break;
-              newStyle[_j] = val[_j];
-            }
-          }
-          newStyle[_i] = values[++k];
-        } else if (newStyle) {
-          newStyle[_i] = _valI;
-        }
-      }
       newProps = newProps || {};
-      newProps.style = newStyle || val;
+      newProps.style = renderStyle(val, at, values) || val;
     } else {
       newProps = newProps || {};
       newProps[key] = val;
@@ -165,6 +147,31 @@ function _render(props, values) {
   }
 
   return newChildren instanceof Array ? reactElement.apply(null, [type, newProps].concat(newChildren)) : newChildren ? reactElement(type, newProps, newChildren) : reactElement(type, newProps);
+}
+
+//
+
+function forEachInChildrenArray(children, extra, fn) {
+  for (var i = 0, n = children.length; i < n; ++i) {
+    var childI = children[i];
+    if (isObs(childI)) fn(extra, childI);else if (isArray(childI)) forEachInChildrenArray(childI, extra, fn);
+  }
+}
+
+function forEachInProps(props, extra, fn) {
+  for (var key in props) {
+    var val = props[key];
+    if (isObs(val)) {
+      fn(extra, val);
+    } else if (CHILDREN === key) {
+      if (isArray(val)) forEachInChildrenArray(val, extra, fn);
+    } else if (STYLE === key) {
+      for (var k in val) {
+        var valK = val[k];
+        if (isObs(valK)) fn(extra, valK);
+      }
+    }
+  }
 }
 
 //
@@ -177,7 +184,29 @@ function onAny1(handler, obs) {
 }
 function onAny(self, obs) {
   var handler = function handler(e) {
-    return self.doHandleN(handler, e);
+    var handlers = self.handlers;
+    var idx = 0;
+    while (handlers[idx] !== handler) {
+      ++idx;
+    } // Found the index of this handler/value
+    if (e.hasValue()) {
+      var value = e.value();
+      var values = self.values;
+      if (values[idx] !== value) {
+        values[idx] = value;
+        self.forceUpdate();
+      }
+    } else if (e.isError()) {
+      throw e.error;
+    } else {
+      // This is End
+      handlers[idx] = null;
+      var n = handlers.length;
+      if (n !== self.values.length) return;
+      for (var i = 0; i < n; ++i) {
+        if (handlers[i]) return;
+      }self.handlers = null; // No handlers left -> nullify
+    }
   };
   self.handlers.push(handler);
   handler.unsub = obs.subscribe(handler);
@@ -189,14 +218,12 @@ function unsub(handler) {
   }
 }
 
-function FromClass(props) {
+var FromClass = /*#__PURE__*/inherit(function FromClass(props) {
   LiftedComponent.call(this, props);
   this.values = this;
   this.handlers = null;
-}
-
-inherit(FromClass, LiftedComponent, {
-  doUnsubscribe: function doUnsubscribe() {
+}, LiftedComponent, {
+  componentWillUnmount: function componentWillUnmount() {
     var handlers = this.handlers;
     if (handlers instanceof Function) {
       handlers.unsub();
@@ -208,7 +235,7 @@ inherit(FromClass, LiftedComponent, {
     var _this2 = this;
 
     this.values = 0;
-    forEach(props, this, incValues);
+    forEachInProps(props, this, incValues);
     var n = this.values; // Here this.values contains the number of observable values. Later on, it'll contain the actual values.
 
     switch (n) {
@@ -219,56 +246,28 @@ inherit(FromClass, LiftedComponent, {
         {
           this.values = this;
           var handlers = function handlers(e) {
-            return _this2.doHandle1(e);
+            if (e.hasValue()) {
+              var value = e.value();
+              if (_this2.values !== value) {
+                _this2.values = value;
+                _this2.forceUpdate();
+              }
+            } else if (e.isError()) {
+              throw e.error;
+            } else {
+              // Assume this is End
+              _this2.values = [_this2.values];
+              _this2.handlers = null;
+            }
           };
           this.handlers = handlers;
-          forEach(props, handlers, onAny1);
+          forEachInProps(props, handlers, onAny1);
           break;
         }
       default:
         this.values = Array(n).fill(this);
         this.handlers = [];
-        forEach(props, this, onAny);
-    }
-  },
-  doHandle1: function doHandle1(e) {
-    if (e.hasValue()) {
-      var value = e.value();
-      if (this.values !== value) {
-        this.values = value;
-        this.forceUpdate();
-      }
-    } else if (e.isError()) {
-      throw e.error;
-    } else {
-      // Assume this is End
-      this.values = [this.values];
-      this.handlers = null;
-    }
-  },
-  doHandleN: function doHandleN(handler, e) {
-    var handlers = this.handlers;
-    var idx = 0;
-    while (handlers[idx] !== handler) {
-      ++idx;
-    } // Found the index of this handler/value
-    if (e.hasValue()) {
-      var value = e.value();
-      var values = this.values;
-      if (values[idx] !== value) {
-        values[idx] = value;
-        this.forceUpdate();
-      }
-    } else if (e.isError()) {
-      throw e.error;
-    } else {
-      // This is End
-      handlers[idx] = null;
-      var n = handlers.length;
-      if (n !== this.values.length) return;
-      for (var i = 0; i < n; ++i) {
-        if (handlers[i]) return;
-      }this.handlers = null; // No handlers left -> nullify
+        forEachInProps(props, this, onAny);
     }
   },
   render: function render() {
@@ -287,15 +286,21 @@ inherit(FromClass, LiftedComponent, {
 
 //
 
+function hasObsInChildrenArray(i, children) {
+  for (var n = children.length; i < n; ++i) {
+    var child = children[i];
+    if (isObs(child) || isArray(child) && hasObsInChildrenArray(0, child)) return true;
+  }
+  return false;
+}
+
 function hasObsInProps(props) {
   for (var key in props) {
     var val = props[key];
     if (isObs(val)) {
       return true;
     } else if (CHILDREN === key) {
-      if (isArray(val)) for (var i = 0, n = val.length; i < n; ++i) {
-        if (isObs(val[i])) return true;
-      }
+      if (isArray(val) && hasObsInChildrenArray(0, val)) return true;
     } else if (STYLE === key) {
       for (var k in val) {
         if (isObs(val[k])) return true;
@@ -305,31 +310,15 @@ function hasObsInProps(props) {
   return false;
 }
 
-function hasObsInArgs(args) {
-  for (var i = 2, n = args.length; i < n; ++i) {
-    var arg = args[i];
-    if (isArray(arg)) {
-      for (var j = 0, m = arg.length; j < m; ++j) {
-        if (isObs(arg[j])) return true;
-      }
-    } else if (isObs(arg)) {
-      return true;
-    }
-  }
-  return hasObsInProps(args[1]);
-}
+//
 
 function filterProps(type, props) {
   var newProps = { "$$type": type };
   for (var key in props) {
     var val = props[key];
-    if ("ref" === key) newProps[DD_REF] = val;else if (BARET !== key) newProps[key] = val;
+    if ("ref" === key) newProps[DD_REF] = val;else if (LIFT !== key) newProps[key] = val;
   }
   return newProps;
-}
-
-function hasLift(props) {
-  return props && props[BARET] === true;
 }
 
 function createElement() {
@@ -338,13 +327,13 @@ function createElement() {
   }
 
   var type = args[0];
-  var props = args[1];
-  if (isString(type) || hasLift(props)) {
-    if (hasObsInArgs(args)) {
+  var props = args[1] || object0;
+  if (isString(type) || props[LIFT]) {
+    if (hasObsInChildrenArray(2, args) || hasObsInProps(props)) {
       args[1] = filterProps(type, props);
       args[0] = FromClass;
-    } else if (hasLift(props)) {
-      args[1] = dissocPartialU(BARET, props) || object0;
+    } else if (props[LIFT]) {
+      args[1] = dissocPartialU(LIFT, props) || object0;
     }
   }
   return reactElement.apply(undefined, args);
