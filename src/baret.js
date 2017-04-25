@@ -75,27 +75,50 @@ export const fromBacon = observable => reactElement(FromBacon, {observable})
 
 //
 
-function forEach(props, extra, fn) {
-  for (const key in props) {
-    const val = props[key]
-    if (isObs(val)) {
-      fn(extra, val)
-    } else if (CHILDREN === key) {
-      if (isArray(val)) {
-        for (let i=0, n=val.length; i<n; ++i) {
-          const valI = val[i]
-          if (isObs(valI))
-            fn(extra, valI)
-        }
+function renderChildren(children, at, values) {
+  if (isObs(children)) {
+    return values[++at[0]]
+  } else if (isArray(children)) {
+    let newChildren = children
+    for (let i=0, n=children.length; i<n; ++i) {
+      const childI = children[i]
+      let newChildI = childI
+      if (isObs(childI)) {
+        newChildI = values[++at[0]]
+      } else if (isArray(childI)) {
+        newChildI = renderChildren(childI, at, values)
       }
-    } else if (STYLE === key) {
-      for (const k in val) {
-        const valK = val[k]
-        if (isObs(valK))
-          fn(extra, valK)
+      if (newChildI !== childI) {
+        if (newChildren === children)
+          newChildren = children.slice(0)
+        newChildren[i] = newChildI
       }
     }
+    return newChildren
+  } else {
+    return children
   }
+}
+
+function renderStyle(style, at, values) {
+  let newStyle = undefined
+  for (const i in style) {
+    const styleI = style[i]
+    if (isObs(styleI)) {
+      if (!newStyle) {
+        newStyle = {}
+        for (const j in style) {
+          if (j === i)
+            break
+          newStyle[j] = style[j]
+        }
+      }
+      newStyle[i] = values[++at[0]]
+    } else if (newStyle) {
+      newStyle[i] = styleI
+    }
+  }
+  return newStyle || style
 }
 
 function render(props, values) {
@@ -103,59 +126,23 @@ function render(props, values) {
   let newProps = null
   let newChildren = null
 
-  let k = -1
+  const at = [-1]
 
   for (const key in props) {
     const val = props[key]
     if (CHILDREN === key) {
-      if (isObs(val)) {
-        newChildren = values[++k]
-      } else if (isArray(val)) {
-        for (let i=0, n=val.length; i<n; ++i) {
-          const valI = val[i]
-          if (isObs(valI)) {
-            if (!newChildren) {
-              newChildren = Array(n)
-              for (let j=0; j<i; ++j)
-                newChildren[j] = val[j]
-            }
-            newChildren[i] = values[++k]
-          } else if (newChildren)
-            newChildren[i] = valI
-        }
-        if (!newChildren)
-          newChildren = val
-      } else {
-        newChildren = val
-      }
+      newChildren = renderChildren(val, at, values)
     } else if ("$$type" === key) {
       type = props[key]
     } else if (DD_REF === key) {
       newProps = newProps || {}
-      newProps.ref = isObs(val) ? values[++k] : val
+      newProps.ref = isObs(val) ? values[++at[0]] : val
     } else if (isObs(val)) {
       newProps = newProps || {}
-      newProps[key] = values[++k]
+      newProps[key] = values[++at[0]]
     } else if (STYLE === key) {
-      let newStyle
-      for (const i in val) {
-        const valI = val[i]
-        if (isObs(valI)) {
-          if (!newStyle) {
-            newStyle = {}
-            for (const j in val) {
-              if (j === i)
-                break
-              newStyle[j] = val[j]
-            }
-          }
-          newStyle[i] = values[++k]
-        } else if (newStyle) {
-          newStyle[i] = valI
-        }
-      }
       newProps = newProps || {}
-      newProps.style = newStyle || val
+      newProps.style = renderStyle(val, at, values) || val
     } else {
       newProps = newProps || {}
       newProps[key] = val
@@ -171,9 +158,39 @@ function render(props, values) {
 
 //
 
+function forEachInChildrenArray(children, extra, fn) {
+  for (let i=0, n=children.length; i<n; ++i) {
+    const childI = children[i]
+    if (isObs(childI))
+      fn(extra, childI)
+    else if (isArray(childI))
+      forEachInChildrenArray(childI, extra, fn)
+  }
+}
+
+function forEachInProps(props, extra, fn) {
+  for (const key in props) {
+    const val = props[key]
+    if (isObs(val)) {
+      fn(extra, val)
+    } else if (CHILDREN === key) {
+      if (isArray(val))
+        forEachInChildrenArray(val, extra, fn)
+    } else if (STYLE === key) {
+      for (const k in val) {
+        const valK = val[k]
+        if (isObs(valK))
+          fn(extra, valK)
+      }
+    }
+  }
+}
+
+//
+
 function incValues(self) { self.values += 1 }
-function onAny1(handler, obs) { 
-  handler.unsub = obs.subscribe(handler) 
+function onAny1(handler, obs) {
+  handler.unsub = obs.subscribe(handler)
 }
 function onAny(self, obs) {
   const handler = e => {
@@ -227,7 +244,7 @@ const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
   },
   doSubscribe(props) {
     this.values = 0
-    forEach(props, this, incValues)
+    forEachInProps(props, this, incValues)
     const n = this.values // Here this.values contains the number of observable values. Later on, it'll contain the actual values.
 
     switch (n) {
@@ -251,13 +268,13 @@ const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
           }
         }
         this.handlers = handlers
-        forEach(props, handlers, onAny1)
+        forEachInProps(props, handlers, onAny1)
         break
       }
       default:
         this.values = Array(n).fill(this)
         this.handlers = []
-        forEach(props, this, onAny)
+        forEachInProps(props, this, onAny)
     }
   },
   render() {
