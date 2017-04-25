@@ -72,6 +72,19 @@ describe("basics", () => {
                Hello {Bacon.constant("world!")}
              </Spread>,
              '<div>Hello world!</div>')
+
+  testRender(<div><div>a</div>{[<div key="b">b</div>, [<div key="c">c</div>, [<div key="d">d</div>]]]}</div>,
+             '<div><div>a</div><div>b</div><div>c</div><div>d</div></div>')
+
+  testRender(<div><div>a</div>{[<div key="b">b</div>, Bacon.constant([<div key="c">c</div>, [<div key="d">d</div>]])]}</div>,
+             '<div><div>a</div><div>b</div><div>c</div><div>d</div></div>')
+
+  const ChildrenWithSibling = ({children}) => <div>Test: {children}</div>
+
+  testRender(<ChildrenWithSibling>
+               Hello {Bacon.constant("world!")}
+             </ChildrenWithSibling>,
+             '<div>Test: Hello world!</div>')
 })
 
 describe("fromBacon", () => {
