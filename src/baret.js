@@ -176,7 +176,32 @@ function onAny1(handler, obs) {
   handler.unsub = obs.subscribe(handler) 
 }
 function onAny(self, obs) {
-  const handler = e => self.doHandleN(handler, e)
+  const handler = e => {
+    const handlers = self.handlers
+    let idx=0
+    while (handlers[idx] !== handler)
+      ++idx
+    // Found the index of this handler/value
+    if (e.hasValue()) {
+      const value = e.value()
+      const values = self.values
+      if (values[idx] !== value) {
+        values[idx] = value
+        self.forceUpdate()
+      }
+    } else if (e.isError()) {
+      throw e.error
+    } else { // This is End
+      handlers[idx] = null
+      const n = handlers.length
+      if (n !== self.values.length)
+        return
+      for (let i=0; i < n; ++i)
+        if (handlers[i])
+          return
+      self.handlers = null // No handlers left -> nullify
+    }
+  }
   self.handlers.push(handler)
   handler.unsub = obs.subscribe(handler)
 }
@@ -211,7 +236,20 @@ const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
         break
       case 1: {
         this.values = this
-        const handlers = e => this.doHandle1(e)
+        const handlers = e => {
+          if (e.hasValue()) {
+            const value = e.value()
+            if (this.values !== value) {
+              this.values = value
+              this.forceUpdate()
+            }
+          } else if (e.isError()) {
+            throw e.error
+          } else { // Assume this is End
+            this.values = [this.values]
+            this.handlers = null
+          }
+        }
         this.handlers = handlers
         forEach(props, handlers, onAny1)
         break
@@ -220,46 +258,6 @@ const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
         this.values = Array(n).fill(this)
         this.handlers = []
         forEach(props, this, onAny)
-    }
-  },
-  doHandle1(e) {
-    if (e.hasValue()) {
-      const value = e.value()
-      if (this.values !== value) {
-        this.values = value
-        this.forceUpdate()
-      }
-    } else if (e.isError()) {
-      throw e.error
-    } else { // Assume this is End
-      this.values = [this.values]
-      this.handlers = null
-    }
-  },
-  doHandleN(handler, e) {
-    const handlers = this.handlers
-    let idx=0
-    while (handlers[idx] !== handler)
-      ++idx
-    // Found the index of this handler/value
-    if (e.hasValue()) {
-      const value = e.value()
-      const values = this.values
-      if (values[idx] !== value) {
-        values[idx] = value
-        this.forceUpdate()
-      }
-    } else if (e.isError()) {
-      throw e.error
-    } else { // This is End
-      handlers[idx] = null
-      const n = handlers.length
-      if (n !== this.values.length)
-        return
-      for (let i=0; i < n; ++i)
-        if (handlers[i])
-          return
-      this.handlers = null // No handlers left -> nullify
     }
   },
   render() {
@@ -280,16 +278,23 @@ const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
 
 //
 
+function hasObsInChildrenArray(i, children) {
+  for (const n = children.length; i < n; ++i) {
+    const child = children[i]
+    if (isObs(child) || isArray(child) && hasObsInChildrenArray(0, child))
+      return true
+  }
+  return false
+}
+
 function hasObsInProps(props) {
   for (const key in props) {
     const val = props[key]
     if (isObs(val)) {
       return true
     } else if (CHILDREN === key) {
-      if (isArray(val))
-        for (let i=0, n=val.length; i<n; ++i)
-          if (isObs(val[i]))
-            return true
+      if (isArray(val) && hasObsInChildrenArray(0, val))
+        return true
     } else if (STYLE === key) {
       for (const k in val)
         if (isObs(val[k]))
@@ -299,19 +304,7 @@ function hasObsInProps(props) {
   return false
 }
 
-function hasObsInArgs(args) {
-  for (let i=2, n=args.length; i<n; ++i) {
-    const arg = args[i]
-    if (isArray(arg)) {
-      for (let j=0, m=arg.length; j<m; ++j)
-        if (isObs(arg[j]))
-          return true
-    } else if (isObs(arg)) {
-      return true
-    }
-  }
-  return hasObsInProps(args[1])
-}
+//
 
 function filterProps(type, props) {
   const newProps = {"$$type": type}
@@ -325,18 +318,14 @@ function filterProps(type, props) {
   return newProps
 }
 
-function hasLift(props) {
-  return props && props[LIFT] === true
-}
-
 function createElement(...args) {
   const type = args[0]
-  const props = args[1]
-  if (isString(type) || hasLift(props)) {
-    if (hasObsInArgs(args)) {
+  const props = args[1] || object0
+  if (isString(type) || props[LIFT]) {
+    if (hasObsInChildrenArray(2, args) || hasObsInProps(props)) {
       args[1] = filterProps(type, props)
       args[0] = FromClass
-    } else if (hasLift(props)) {
+    } else if (props[LIFT]) {
       args[1] = dissocPartialU(LIFT, props) || object0
     }
   }
