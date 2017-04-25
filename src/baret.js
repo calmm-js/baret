@@ -26,33 +26,26 @@ const isObs = x => x instanceof Observable
 
 //
 
-function LiftedComponent(props) {
+const LiftedComponent = /*#__PURE__*/inherit(function LiftedComponent(props) {
   Component.call(this, props)
-}
-
-inherit(LiftedComponent, Component, {
+}, Component, {
   componentWillReceiveProps(nextProps) {
-    this.doUnsubscribe()
+    this.componentWillUnmount()
     this.doSubscribe(nextProps)
   },
   componentWillMount() {
     this.doSubscribe(this.props)
-  },
-  componentWillUnmount() {
-    this.doUnsubscribe()
   }
 })
 
 //
 
-function FromBacon(props) {
+const FromBacon = /*#__PURE__*/inherit(function FromBacon(props) {
   LiftedComponent.call(this, props)
   this.callback = null
   this.rendered = null
-}
-
-inherit(FromBacon, LiftedComponent, {
-  doUnsubscribe() {
+}, LiftedComponent, {
+  componentWillUnmount() {
     if (this.unsub)
       this.unsub()
   },
@@ -194,14 +187,12 @@ function unsub(handler) {
   }
 }
 
-function FromClass(props) {
+const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
   LiftedComponent.call(this, props)
   this.values = this
   this.handlers = null
-}
-
-inherit(FromClass, LiftedComponent, {
-  doUnsubscribe() {
+}, LiftedComponent, {
+  componentWillUnmount() {
     const handlers = this.handlers
     if (handlers instanceof Function) {
       handlers.unsub()
