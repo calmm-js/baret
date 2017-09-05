@@ -1,0 +1,21 @@
+{
+  "name": "baret",
+  "description": "Baret is a library that allows you to embed Bacon.js observables into React VDOM",
+  "main": "dist/baret.js",
+  "license": "MIT",
+  "keywords": [
+    "jsx",
+    "baconjs",
+    "observables",
+    "react",
+    "reactive",
+    "vdom"
+  ],
+  "homepage": "https://github.com/calmm-js/baret",
+  "dependencies": {
+    "infestines": "^0.4.4",
+    "bacon": "^0.7",
+    "react": "^15.0.1"
+  },
+  "ignore": ["*", "!*.md", "!dist/*"]
+}
