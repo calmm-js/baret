@@ -355,4 +355,5 @@ var fromClass = function fromClass(Class) {
   };
 };
 
-export { fromBacon, fromClass };export default baret;
+export { fromBacon, fromClass };
+export default baret;

@@ -1,10 +1,10 @@
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('react'), require('baconjs'), require('infestines')) :
 	typeof define === 'function' && define.amd ? define(['exports', 'react', 'baconjs', 'infestines'], factory) :
-	(factory((global.baret = global.baret || {}),global.React,global.Bacon,global.I));
+	(factory((global.baret = {}),global.React,global.Bacon,global.I));
 }(this, (function (exports,React,baconjs,infestines) { 'use strict';
 
-React = 'default' in React ? React['default'] : React;
+React = React && React.hasOwnProperty('default') ? React['default'] : React;
 
 //
 
