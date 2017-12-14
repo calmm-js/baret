@@ -85,6 +85,9 @@ describe("basics", () => {
                Hello {Bacon.constant("world!")}
              </ChildrenWithSibling>,
              '<div>Test: Hello world!</div>')
+
+  testRender(<span>0</span>, '<span>0</span>')
+  testRender(<span>{Bacon.constant(0)}</span>, '<span>0</span>')
 })
 
 describe("fromBacon", () => {
