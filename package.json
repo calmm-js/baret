@@ -1,6 +1,6 @@
 {
   "name": "baret",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Baret is a library that allows you to embed Bacon.js observables into React VDOM",
   "module": "dist/baret.es.js",
   "main": "dist/baret.cjs.js",
