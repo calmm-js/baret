@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "infestines": "^0.4.4",
-    "baconjs": "^0.7",
+    "baconjs": ">0.7 <2.0",
     "react": "^15.0.1"
   }
 }
