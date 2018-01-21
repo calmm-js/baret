@@ -1,5 +1,5 @@
 import React from 'react';
-import { Observable } from 'baconjs';
+import Bacon, { Observable } from 'baconjs';
 import { array0, assocPartialU, dissocPartialU, inherit, isArray, isString, object0 } from 'infestines';
 
 //
@@ -17,7 +17,12 @@ var Component = React.Component;
 var isObs = function isObs(x) {
   return x instanceof Observable;
 };
-
+var bacon2 = typeof Bacon.Next().value != "function";
+var eventValue = bacon2 ? function (e) {
+  return e.value;
+} : function (e) {
+  return e.value();
+};
 //
 
 var LiftedComponent = /*#__PURE__*/inherit(function LiftedComponent(props) {
@@ -50,7 +55,7 @@ var FromBacon = /*#__PURE__*/inherit(function FromBacon(props) {
     if (isObs(observable)) {
       var callback = function callback(e) {
         if (e.hasValue()) {
-          _this.rendered = e.value() || null;
+          _this.rendered = eventValue(e) || null;
           _this.forceUpdate();
         } else if (e.isError()) {
           throw e.error;
@@ -190,7 +195,7 @@ function onAny(self, obs) {
       ++idx;
     } // Found the index of this handler/value
     if (e.hasValue()) {
-      var value = e.value();
+      var value = eventValue(e);
       var values = self.values;
       if (values[idx] !== value) {
         values[idx] = value;
@@ -247,7 +252,7 @@ var FromClass = /*#__PURE__*/inherit(function FromClass(props) {
           this.values = this;
           var handlers = function handlers(e) {
             if (e.hasValue()) {
-              var value = e.value();
+              var value = eventValue(e);
               if (_this2.values !== value) {
                 _this2.values = value;
                 _this2.forceUpdate();

@@ -1,5 +1,5 @@
 import React from "react"
-import {Observable} from "baconjs"
+import Bacon, {Observable} from "baconjs"
 import {
   array0,
   assocPartialU,
@@ -23,7 +23,8 @@ const reactElement = React.createElement
 const Component = React.Component
 
 const isObs = x => x instanceof Observable
-
+const bacon2 = typeof (Bacon.Next().value) != "function"
+const eventValue = bacon2 ? e => e.value : e => e.value()
 //
 
 const LiftedComponent = /*#__PURE__*/inherit(function LiftedComponent(props) {
@@ -53,7 +54,7 @@ const FromBacon = /*#__PURE__*/inherit(function FromBacon(props) {
     if (isObs(observable)) {
       const callback = e => {
         if (e.hasValue()) {
-          this.rendered = e.value() || null
+          this.rendered = eventValue(e) || null
           this.forceUpdate()
         } else if (e.isError()) {
           throw e.error
@@ -200,7 +201,7 @@ function onAny(self, obs) {
       ++idx
     // Found the index of this handler/value
     if (e.hasValue()) {
-      const value = e.value()
+      const value = eventValue(e)
       const values = self.values
       if (values[idx] !== value) {
         values[idx] = value
@@ -255,7 +256,7 @@ const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
         this.values = this
         const handlers = e => {
           if (e.hasValue()) {
-            const value = e.value()
+            const value = eventValue(e)
             if (this.values !== value) {
               this.values = value
               this.forceUpdate()

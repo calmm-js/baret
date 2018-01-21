@@ -52,7 +52,7 @@ describe("basics", () => {
              '<a href="#lol" style="color:red;">Hello world!</a>')
 
   testRender(<div>{Bacon.later(1000,0)}</div>, "")
-  testRender(<div>{Bacon.once(1).merge(Bacon.later(1000,0))}</div>, "<div>1</div>")
+  testRender(<div>{Bacon.later(1000,0).toProperty(1)}</div>, "<div>1</div>")
   testRender(<div>{Bacon.later(1000,0)} {Bacon.constant(0)}</div>, "")
 
   const Custom = ({prop, ...props}) => <div>{`${prop} ${JSON.stringify(props)}`}</div>

@@ -2,9 +2,10 @@
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('react'), require('baconjs'), require('infestines')) :
 	typeof define === 'function' && define.amd ? define(['exports', 'react', 'baconjs', 'infestines'], factory) :
 	(factory((global.baret = {}),global.React,global.Bacon,global.I));
-}(this, (function (exports,React,baconjs,infestines) { 'use strict';
+}(this, (function (exports,React,Bacon,infestines) { 'use strict';
 
 React = React && React.hasOwnProperty('default') ? React['default'] : React;
+var Bacon__default = 'default' in Bacon ? Bacon['default'] : Bacon;
 
 //
 
@@ -19,9 +20,14 @@ var reactElement = React.createElement;
 var Component = React.Component;
 
 var isObs = function isObs(x) {
-  return x instanceof baconjs.Observable;
+  return x instanceof Bacon.Observable;
 };
-
+var bacon2 = typeof Bacon__default.Next().value != "function";
+var eventValue = bacon2 ? function (e) {
+  return e.value;
+} : function (e) {
+  return e.value();
+};
 //
 
 var LiftedComponent = /*#__PURE__*/infestines.inherit(function LiftedComponent(props) {
@@ -54,7 +60,7 @@ var FromBacon = /*#__PURE__*/infestines.inherit(function FromBacon(props) {
     if (isObs(observable)) {
       var callback = function callback(e) {
         if (e.hasValue()) {
-          _this.rendered = e.value() || null;
+          _this.rendered = eventValue(e) || null;
           _this.forceUpdate();
         } else if (e.isError()) {
           throw e.error;
@@ -194,7 +200,7 @@ function onAny(self, obs) {
       ++idx;
     } // Found the index of this handler/value
     if (e.hasValue()) {
-      var value = e.value();
+      var value = eventValue(e);
       var values = self.values;
       if (values[idx] !== value) {
         values[idx] = value;
@@ -251,7 +257,7 @@ var FromClass = /*#__PURE__*/infestines.inherit(function FromClass(props) {
           this.values = this;
           var handlers = function handlers(e) {
             if (e.hasValue()) {
-              var value = e.value();
+              var value = eventValue(e);
               if (_this2.values !== value) {
                 _this2.values = value;
                 _this2.forceUpdate();

@@ -5,7 +5,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var React = _interopDefault(require('react'));
-var baconjs = require('baconjs');
+var Bacon = require('baconjs');
+var Bacon__default = _interopDefault(Bacon);
 var infestines = require('infestines');
 
 //
@@ -21,9 +22,14 @@ var reactElement = React.createElement;
 var Component = React.Component;
 
 var isObs = function isObs(x) {
-  return x instanceof baconjs.Observable;
+  return x instanceof Bacon.Observable;
 };
-
+var bacon2 = typeof Bacon__default.Next().value != "function";
+var eventValue = bacon2 ? function (e) {
+  return e.value;
+} : function (e) {
+  return e.value();
+};
 //
 
 var LiftedComponent = /*#__PURE__*/infestines.inherit(function LiftedComponent(props) {
@@ -56,7 +62,7 @@ var FromBacon = /*#__PURE__*/infestines.inherit(function FromBacon(props) {
     if (isObs(observable)) {
       var callback = function callback(e) {
         if (e.hasValue()) {
-          _this.rendered = e.value() || null;
+          _this.rendered = eventValue(e) || null;
           _this.forceUpdate();
         } else if (e.isError()) {
           throw e.error;
@@ -196,7 +202,7 @@ function onAny(self, obs) {
       ++idx;
     } // Found the index of this handler/value
     if (e.hasValue()) {
-      var value = e.value();
+      var value = eventValue(e);
       var values = self.values;
       if (values[idx] !== value) {
         values[idx] = value;
@@ -253,7 +259,7 @@ var FromClass = /*#__PURE__*/infestines.inherit(function FromClass(props) {
           this.values = this;
           var handlers = function handlers(e) {
             if (e.hasValue()) {
-              var value = e.value();
+              var value = eventValue(e);
               if (_this2.values !== value) {
                 _this2.values = value;
                 _this2.forceUpdate();
