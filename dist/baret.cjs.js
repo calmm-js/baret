@@ -30,6 +30,21 @@ var eventValue = bacon2 ? function (e) {
 } : function (e) {
   return e.value();
 };
+var hasValue = bacon2 ? function (e) {
+  return e.hasValue;
+} : function (e) {
+  return e.hasValue();
+};
+var isError = bacon2 ? function (e) {
+  return e.isError;
+} : function (e) {
+  return e.isError();
+};
+var isEnd = bacon2 ? function (e) {
+  return e.isEnd;
+} : function (e) {
+  return e.isEnd();
+};
 //
 
 var LiftedComponent = /*#__PURE__*/infestines.inherit(function LiftedComponent(props) {
@@ -61,12 +76,12 @@ var FromBacon = /*#__PURE__*/infestines.inherit(function FromBacon(props) {
 
     if (isObs(observable)) {
       var callback = function callback(e) {
-        if (e.hasValue()) {
+        if (hasValue(e)) {
           _this.rendered = eventValue(e) || null;
           _this.forceUpdate();
-        } else if (e.isError()) {
+        } else if (isError(e)) {
           throw e.error;
-        } else if (e.isEnd()) {
+        } else if (isEnd(e)) {
           _this.unsub = null;
         }
       };
@@ -201,14 +216,14 @@ function onAny(self, obs) {
     while (handlers[idx] !== handler) {
       ++idx;
     } // Found the index of this handler/value
-    if (e.hasValue()) {
+    if (hasValue(e)) {
       var value = eventValue(e);
       var values = self.values;
       if (values[idx] !== value) {
         values[idx] = value;
         self.forceUpdate();
       }
-    } else if (e.isError()) {
+    } else if (isError(e)) {
       throw e.error;
     } else {
       // This is End
@@ -258,13 +273,13 @@ var FromClass = /*#__PURE__*/infestines.inherit(function FromClass(props) {
         {
           this.values = this;
           var handlers = function handlers(e) {
-            if (e.hasValue()) {
+            if (hasValue(e)) {
               var value = eventValue(e);
               if (_this2.values !== value) {
                 _this2.values = value;
                 _this2.forceUpdate();
               }
-            } else if (e.isError()) {
+            } else if (isError(e)) {
               throw e.error;
             } else {
               // Assume this is End

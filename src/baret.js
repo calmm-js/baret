@@ -25,6 +25,9 @@ const Component = React.Component
 const isObs = x => x instanceof Observable
 const bacon2 = typeof (Bacon.Next().value) != "function"
 const eventValue = bacon2 ? e => e.value : e => e.value()
+const hasValue = bacon2 ? e => e.hasValue : e => e.hasValue()
+const isError = bacon2 ? e => e.isError : e => e.isError()
+const isEnd = bacon2 ? e => e.isEnd : e => e.isEnd()
 //
 
 const LiftedComponent = /*#__PURE__*/inherit(function LiftedComponent(props) {
@@ -53,12 +56,12 @@ const FromBacon = /*#__PURE__*/inherit(function FromBacon(props) {
   doSubscribe({observable}) {
     if (isObs(observable)) {
       const callback = e => {
-        if (e.hasValue()) {
+        if (hasValue(e)) {
           this.rendered = eventValue(e) || null
           this.forceUpdate()
-        } else if (e.isError()) {
+        } else if (isError(e)) {
           throw e.error
-        } else if (e.isEnd()) {
+        } else if (isEnd(e)) {
           this.unsub = null
         }
       }
@@ -200,14 +203,14 @@ function onAny(self, obs) {
     while (handlers[idx] !== handler)
       ++idx
     // Found the index of this handler/value
-    if (e.hasValue()) {
+    if (hasValue(e)) {
       const value = eventValue(e)
       const values = self.values
       if (values[idx] !== value) {
         values[idx] = value
         self.forceUpdate()
       }
-    } else if (e.isError()) {
+    } else if (isError(e)) {
       throw e.error
     } else { // This is End
       handlers[idx] = null
@@ -255,13 +258,13 @@ const FromClass = /*#__PURE__*/inherit(function FromClass(props) {
       case 1: {
         this.values = this
         const handlers = e => {
-          if (e.hasValue()) {
+          if (hasValue(e)) {
             const value = eventValue(e)
             if (this.values !== value) {
               this.values = value
               this.forceUpdate()
             }
-          } else if (e.isError()) {
+          } else if (isError(e)) {
             throw e.error
           } else { // Assume this is End
             this.values = [this.values]
