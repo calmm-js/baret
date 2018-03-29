@@ -48,7 +48,6 @@
     "mocha": "^3.5.0",
     "nyc": "^11.2.1",
     "prop-types": "^15.5.10",
-    "react-addons-test-utils": "^15.6.0",
     "react-dom": "^15.6.1",
     "rollup": "^0.49.2",
     "rollup-plugin-babel": "^3.0.2",
