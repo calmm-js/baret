@@ -48,8 +48,8 @@
     "mocha": "^3.5.0",
     "nyc": "^11.2.1",
     "prop-types": "^15.5.10",
-    "react-addons-test-utils": "^15.6.0",
-    "react-dom": "^15.6.1",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
     "rollup": "^0.49.2",
     "rollup-plugin-babel": "^3.0.2",
     "rollup-plugin-commonjs": "^8.2.0",
@@ -58,10 +58,10 @@
     "rollup-plugin-uglify": "^2.0.1"
   },
   "dependencies": {
-    "infestines": "^0.4.4",
-    "react": "^15.0.1"
+    "infestines": "^0.4.4"
   },
   "peerDependencies": {
-    "baconjs": ">=0.7 <3.0"
+    "baconjs": ">=0.7 <3.0",
+    "react": ">=15.0.1 <17"
   }
 }

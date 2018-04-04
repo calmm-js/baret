@@ -44,12 +44,12 @@ describe("basics", () => {
                <p>{Bacon.constant(["Hello"])}</p>
                <p>{Bacon.constant(["World"])}</p>
              </div>,
-             '<div style="display:block;color:red;background:green;"><p>Hello</p><p>World</p></div>')
+             '<div style="display:block;color:red;background:green"><p>Hello</p><p>World</p></div>')
 
   testRender(<a href="#lol" style={Bacon.constant({color: "red"})}>
                {Bacon.constant("Hello")} {Bacon.constant("world!")}
              </a>,
-             '<a href="#lol" style="color:red;">Hello world!</a>')
+             '<a href="#lol" style="color:red">Hello world!</a>')
 
   testRender(<div>{Bacon.later(1000,0)}</div>, "")
   testRender(<div>{Bacon.later(1000,0).toProperty(1)}</div>, "<div>1</div>")
